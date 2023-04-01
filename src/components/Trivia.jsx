@@ -4,80 +4,94 @@ import play from "../sounds/play.mp3";
 import correct from "../sounds/correct.mp3";
 import wrong from "../sounds/wrong.mp3";
 
-export default function Trivia({
-    data,
+const Trivia = ({
+    questionSet,
     questionNumber,
     setQuestionNumber,
     setTimeOut,
-}) {
+    setEarned,
+    moneyPyramid
+}) => {
     const [question, setQuestion] = useState(null);
     const [selectedAnswer, setSelectedAnswer] = useState(null);
     const [className, setClassName] = useState("answer");
+
+    // handle sounds 
     const [letsPlay] = useSound(play);
     const [correctAnswer] = useSound(correct);
     const [wrongAnswer] = useSound(wrong);
 
+    // play once when the quiz starts
     useEffect(() => {
         letsPlay();
     }, [letsPlay]);
 
+    // set question
     useEffect(() => {
-        setQuestion(data[questionNumber - 1]);
-    }, [data, questionNumber]);
+        setQuestion(questionSet[questionNumber - 1]);
+    }, [questionSet, questionNumber]);
 
+    // handle timeouts
     const delay = (duration, callback) => {
         setTimeout(() => {
             callback();
         }, duration);
     };
 
-    const handleClick = (a) => {
-        setSelectedAnswer(a);
+    // sumbit answers
+    const handleClick = (ans) => {
+        setSelectedAnswer(ans);
         setClassName("answer active");
-        delay(3000, () => {
-            setClassName(a.correct ? "answer correct" : "answer wrong");
-        });
-        // setTimeout(() => {
-        //   setClassName(a.correct ? "answer correct" : "answer wrong");
-        // }, 3000);
 
-        // setTimeout(() => {
-        delay(5000, () => {
-            if (a.correct) {
-                correctAnswer();
+        // set earned
+        if(ans.correct) {
+            setEarned(
+                moneyPyramid.find((m) => m.id === questionNumber).amount
+            );
+        }
+
+        // set classname after 3 seconds
+        delay(2000, () => {
+            setClassName(ans.correct ? "answer correct" : "answer wrong");
+        });
+
+        // update question number
+        delay(4000, () => {
+            if (ans.correct) {
+                correctAnswer();              
+
                 delay(1000, () => {
                     setQuestionNumber((prev) => prev + 1);
                     setSelectedAnswer(null);
+                    setClassName("");
                 });
-                // setTimeout(() => {
-                //   setQuestionNumber((prev) => prev + 1);
-                //   setSelectedAnswer(null);
-                // }, 1000);
+
             } else {
                 wrongAnswer();
                 delay(1000, () => {
                     setTimeOut(true);
                 });
-                // setTimeout(() => {
-                //   setTimeOut(true);
-                // }, 1000);
             }
-            // }, 5000);
-        })
+        });
     };
+
+
     return (
         <div className="trivia">
             <div className="question">{question?.question}</div>
             <div className="answers">
-                {question?.answers.map((a) => (
+                {question?.answers.map((ans) => (
                     <div
-                        className={selectedAnswer === a ? className : "answer"}
-                        onClick={() => !selectedAnswer && handleClick(a)}
+                        key={ans.id}
+                        className={selectedAnswer===ans ? className : "answer"}
+                        onClick={() => !selectedAnswer && handleClick(ans)}
                     >
-                        {a.text}
+                        {ans.answer}
                     </div>
                 ))}
             </div>
         </div>
     );
 }
+
+export default Trivia;
